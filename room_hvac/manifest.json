@@ -1,0 +1,10 @@
+{
+  "domain": "room_hvac",
+  "name": "Room HVAC Controller",
+  "version": "0.1.0",
+  "config_flow": true,
+  "codeowners": ["@lunadeertech"],
+  "documentation": "https://github.com/LunaDeerTech/room_hvac",
+  "requirements": [],
+  "iot_class": "local_polling"
+}
