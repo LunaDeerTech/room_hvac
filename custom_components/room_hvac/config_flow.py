@@ -302,14 +302,12 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required("ac_entity_id"): selector.EntitySelector(
                     selector.EntitySelectorConfig(
-                        domain=CLIMATE_DOMAIN,
-                        integration=CLIMATE_DOMAIN,
+                        domain=CLIMATE_DOMAIN
                     ),
                 ),
                 vol.Required("fh_entity_id"): selector.EntitySelector(
                     selector.EntitySelectorConfig(
-                        domain=CLIMATE_DOMAIN,
-                        integration=CLIMATE_DOMAIN,
+                        domain=CLIMATE_DOMAIN
                     ),
                 ),
             }
