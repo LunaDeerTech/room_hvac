@@ -46,6 +46,12 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # noinspection PyTypeChecker
         return super().hass  # type: ignore
     
+    @hass.setter
+    def hass(self, value: HomeAssistant) -> None:
+        """Set HomeAssistant instance."""
+        # ConfigFlow handles hass via parent class
+        pass
+    
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
