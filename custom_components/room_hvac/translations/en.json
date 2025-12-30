@@ -11,14 +11,14 @@
       },
       "behavior": {
         "title": "Behavior Options",
-        "description": "Configure global behavior settings for the Room HVAC integration.",
+        "description": "Configure global behavior settings for the Room HVAC integration.\n\n**Force Control Mode:** When enabled, the integration will prevent external changes to the unified entity and enforce strict control consistency.",
         "data": {
           "force_mode": "Force Control Mode"
         }
       },
       "ac_presets": {
         "title": "AC Preset Configuration",
-        "description": "Configure up to 4 presets for air conditioning modes. Each preset requires a name and fan speed. Unconfigured slots will be ignored.",
+        "description": "Configure up to 4 presets for air conditioning modes. Each preset requires a name and fan speed. Unconfigured slots will be ignored.\n\n**Note:** Each preset maps a name to a specific fan speed. Only configured presets will be available.",
         "data": {
           "ac_slot_1_name": "Preset 1 Name",
           "ac_slot_1_icon": "Preset 1 Icon",
@@ -36,7 +36,7 @@
       },
       "fh_presets": {
         "title": "Floor Heating Preset Configuration",
-        "description": "Configure up to 4 presets for heating mode. Each preset requires a name and target temperature. Temperatures will be validated against your floor heating's min/max range. Unconfigured slots will be ignored.",
+        "description": "Configure up to 4 presets for heating mode. Each preset requires a name and target temperature. Temperatures will be validated against your floor heating's min/max range. Unconfigured slots will be ignored.\n\n**Note:** Each preset maps a name to a target temperature.",
         "data": {
           "fh_slot_1_name": "Preset 1 Name",
           "fh_slot_1_icon": "Preset 1 Icon",
@@ -54,7 +54,7 @@
       },
       "confirm": {
         "title": "Confirm Configuration",
-        "description": "Please review your configuration below. Click **Submit** to create the Room HVAC integration. **Note:** No further modifications can be made after this step.",
+        "description": "**Configuration Summary**\n\n**Entities:**\n• AC Entity: {ac_entity}\n• FH Entity: {fh_entity}\n\n**Behavior:**\n• Force Control Mode: {force_mode}\n\n**AC Presets:**\n{ac_presets}\n\n**FH Presets:**\n{fh_presets}\n\nPlease confirm to create the integration. Click **Submit** to create the Room HVAC integration. **Note:** No further modifications can be made after this step.",
         "data": {
           "confirm": "Confirm and Create"
         }
@@ -73,12 +73,6 @@
     },
     "abort": {
       "single_instance_allowed": "Only one instance of Room HVAC is allowed."
-    },
-    "description": {
-      "force_mode": "When enabled, the integration will prevent external changes to the unified entity and enforce strict control consistency.",
-      "ac_presets": "Configure presets for air conditioning modes. Each preset maps a name to a specific fan speed. Only configured presets will be available.",
-      "fh_presets": "Configure presets for heating mode. Each preset maps a name to a target temperature. Temperatures are validated against your floor heating's capabilities.",
-      "confirm": "**Configuration Summary**\n\n**Entities:**\n• AC Entity: {ac_entity}\n• FH Entity: {fh_entity}\n\n**Behavior:**\n• Force Control Mode: {force_mode}\n\n**AC Presets:**\n{ac_presets}\n\n**FH Presets:**\n{fh_presets}\n\nPlease confirm to create the integration."
     }
   }
 }
