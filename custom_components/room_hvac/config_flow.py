@@ -86,18 +86,20 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         fh_state = self.hass.states.get(fh_entity_id)
                         
                         # Check if entities exist and are available
-                        if not ac_state:
+                        if ac_state is None:
+                            _LOGGER.error("AC entity '%s' not found in Home Assistant states.", ac_entity_id)
                             errors["ac_entity_id"] = "entity_not_found"
-                        if not fh_state:
+                        if fh_state is None:
+                            _LOGGER.error("FH entity '%s' not found in Home Assistant states.", fh_entity_id)
                             errors["fh_entity_id"] = "entity_not_found"
-                        
-                        # Check capabilities if states are available
+
+                        # Proceed only if both states are valid
                         if ac_state and fh_state:
                             # Validate AC capabilities
                             ac_capability_errors = self._validate_ac_capabilities(ac_state)
                             if ac_capability_errors:
                                 errors.update(ac_capability_errors)
-                            
+
                             # Validate FH capabilities
                             fh_capability_errors = self._validate_fh_capabilities(fh_state)
                             if fh_capability_errors:
