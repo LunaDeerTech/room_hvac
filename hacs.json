@@ -1,0 +1,10 @@
+{
+  "name": "Room HVAC Controller",
+  "content_in_root": false,
+  "categories": ["integration"],
+  "domain": "room_hvac",
+  "homeassistant": {
+    "min_version": "2024.1.0"
+  },
+  "render_readme": true
+}

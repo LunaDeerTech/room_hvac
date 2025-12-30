@@ -1,5 +1,8 @@
 # Room HVAC Integration
 
+[![HACS](https://img.shields.io/badge/HACS-Default-blue.svg)](https://hacs.xyz)
+[![Validate](https://github.com/LunaDeerTech/room_hvac/actions/workflows/hassfest.yml/badge.svg)](https://github.com/LunaDeerTech/room_hvac/actions/workflows/hassfest.yml)
+
 A Home Assistant custom integration that provides room-level HVAC management by abstracting multiple climate devices (air conditioner + floor heating) into a single, unified climate entity.
 
 ## Overview
@@ -16,7 +19,19 @@ This integration creates a single climate entity that routes commands to either 
 
 ## Installation
 
-1. Copy the `room_hvac` folder to your Home Assistant `custom_components` directory
+### Via HACS (Recommended)
+
+1. Open HACS in your Home Assistant instance
+2. Click on "Custom Repositories" in the top right menu
+3. Add the repository URL: `https://github.com/LunaDeerTech/room_hvac`
+4. Select "Integration" as the category
+5. Click "Add"
+6. Click "Download" on the new repository card
+7. Restart Home Assistant
+
+### Manual Installation
+
+1. Copy the `custom_components/room_hvac` folder to your Home Assistant `custom_components` directory
 2. Restart Home Assistant
 3. Go to Configuration -> Integrations -> Add Integration -> Search for "Room HVAC"
 
@@ -43,6 +58,15 @@ The integration will guide you through a step-by-step configuration process:
 - Home Assistant 2024.1.0 or later
 - A climate entity for air conditioning (supporting fan modes)
 - A climate entity for floor heating (supporting temperature control)
+
+## Support
+
+- **Issues**: Report bugs and request features on the [GitHub Issues](https://github.com/LunaDeerTech/room_hvac/issues) page
+- **Discussions**: Join the conversation in [GitHub Discussions](https://github.com/LunaDeerTech/room_hvac/discussions)
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## License
 

@@ -1,217 +1,230 @@
-# Copilot Instructions for room_hvac
+# Room HVAC Integration - AI Agent Instructions
 
-**Architecture**: Single climate entity → routes to AC or floor heating. Never both active.
+## Project Overview
+This is a Home Assistant custom integration that provides room-level HVAC management by abstracting multiple climate devices (AC + floor heating) into a single unified climate entity. The integration uses smart routing to direct commands to the appropriate device based on HVAC mode.
 
-**Critical Rules**:
-- `AC_HVAC_MODES = {COOL, DRY, FAN_ONLY}` → AC device
-- `FH_HVAC_MODES = {HEAT}` → FH device  
-- Turn OFF previous device BEFORE activating new one
-- Temperature ALWAYS fetched from active device (no caching)
-- Use `blocking=True` for ALL service calls
-- Validate everything in config flow, nothing at runtime
+**Critical**: This project has a complete implementation following strict functional specifications. All major features are implemented and tested.
 
-**File Structure**:
-- `climate.py` - Mode routing, state sync, presets (main logic)
-- `config_flow.py` - 5-step validation wizard  
-- `const.py` - Constants only
-- `__init__.py` - Setup/unload only
+## Architecture & Key Patterns
 
-**Key Pattern** (mode switching):
-```python
-async def async_set_hvac_mode(self, hvac_mode: str) -> None:
-    if self._attr_hvac_mode != HVACMode.OFF:
-        await self._turn_off_current_device()  # CRITICAL: immediate off
-    
-    self._attr_hvac_mode = hvac_mode
-    
-    if hvac_mode in AC_HVAC_MODES:
-        await self._route_to_ac(hvac_mode)
-    elif hvac_mode in FH_HVAC_MODES:
-        await self._route_to_fh(hvac_mode)
-    
-    await self._update_active_device_state()
-    self.async_write_ha_state()
+### Core Structure
+```
+custom_components/room_hvac/
+├── __init__.py          # Entry point setup, platform forwarding
+├── climate.py           # Main entity implementation (705 lines)
+├── config_flow.py       # 5-step configuration wizard (466 lines)
+├── const.py             # Constants, mode mappings, slot definitions
+├── manifest.json        # Integration metadata
+├── strings.json         # UI text and error messages
+└── translations/        # Localization
 ```
 
-**Presets**: Dynamic visibility by mode
-- AC modes: show AC fan presets only
-- Heat mode: show FH temperature presets only
-- Off mode: no presets
+### Key Design Principles
+1. **Single Entity Pattern**: One `RoomHVACClimateEntity` per integration instance
+2. **Smart Routing**: Mode → Device mapping (cool/dry/fan_only → AC, heat → FH, off → both)
+3. **Dual Preset Systems**: Separate AC (fan speed) and FH (temperature) preset slots
+4. **Force Control Mode**: Optional strict enforcement preventing external modifications
+5. **State Consistency**: Prevents event loops with internal update tracking
 
-**Debug**: `tail -f home-assistant.log | grep "room_hvac"`
+### Critical File Dependencies
+- **const.py**: Defines all mode mappings (`AC_HVAC_MODES`, `FH_HVAC_MODES`)
+- **climate.py**: Implements routing logic, state listeners, force mode corrections
+- **config_flow.py**: Handles entity validation, capability detection, preset configuration
 
-**Never**:
-- Cache temperature
-- Allow AC + FH both on
-- Change mode routing constants
-- Skip config flow validation
+## Development Workflow
 
-**Always**:
-- Use blocking=True
-- Record internal updates
-- Filter empty preset slots
-- Turn off previous device first
-
-## Development Rules
-
-### ✅ DO
-- Use existing constants from `const.py`
-- Follow routing patterns in `climate.py`
-- Add validation in config flow steps
-- Update `strings.json` for new user messages
-- Test routing logic immediately in HA
-- Use `blocking=True` for all service calls
-- Log all operations with appropriate levels
-- Preserve existing preset slot structure (slot_1 to slot_4)
-
-### ❌ DON'T
-- Add new HVAC modes beyond the 5 specified
-- Allow simultaneous AC + FH activation
-- Cache temperature values (always fetch from active device)
-- Create subdirectories in integration root
-- Use Chinese in Python code/comments
-- Modify entity IDs or unique ID format
-- Skip error handling in service calls
-- Change preset slot naming conventions
-
-## Key Implementation Details
-
-### State Management
-- **No state caching**: Temperature values are always fetched from the active device
-- **Immediate device turn-off**: When switching modes, the previous device is turned off before activating the new one
-- **Force mode**: Optional configuration that prevents external changes to the unified entity
-- **Active device tracking**: `_get_active_device_name()` returns "AC", "FH", or None
-
-### Preset System
-- **Dynamic visibility**: Preset list changes based on current HVAC mode
-- **AC presets**: Map to fan modes (4 slots: slot_1 to slot_4)
-- **FH presets**: Map to target temperatures (4 slots: slot_1 to slot_4)
-- **Empty slot handling**: Unconfigured slots are automatically hidden
-- **Preset data structure**: `{preset_name: {"fan_mode": "value", "icon": "optional"}}` for AC
-- **Preset data structure**: `{preset_name: {"temperature": "value", "icon": "optional"}}` for FH
-
-### Config Flow (5 steps)
-1. **Entity Selection** (`async_step_user`): Choose AC and FH climate entities with validation
-   - Validates entity domains (must be climate.*)
-   - Validates capabilities (fan_modes, hvac_modes, target_temperature)
-   - Ensures entities are different
-2. **Behavior Options** (`async_step_behavior`): Configure force control mode
-3. **AC Presets** (`async_step_ac_presets`): Set up fan speed presets (4 slots)
-   - Retrieves available fan_modes from AC entity
-   - Stores only configured slots (name + fan_speed required)
-4. **FH Presets** (`async_step_fh_presets`): Set up temperature presets (4 slots)
-   - Validates temperatures against min/max range
-   - Adjusts out-of-range values with warnings
-   - Stores only configured slots (name + temperature required)
-5. **Confirmation** (`async_step_confirm`): Review and create entry
-
-### Validation Patterns
-- **Entity existence**: Check states are available and not unavailable
-- **Domain validation**: Both must be `climate.*` entities
-- **AC capabilities**: Must have `fan_modes` and support cool/dry/fan_only
-- **FH capabilities**: Must support `heat` mode and `target_temperature`
-- **Temperature range**: Validate against entity's min_temp/max_temp attributes
-
-### Debugging
+### Building & Validation
 ```bash
-# Monitor routing decisions
+# Validate integration structure
+cd custom_components/room_hvac
+python -m py_compile __init__.py climate.py config_flow.py const.py
+
+# Run Home Assistant validation
+# Note: Requires HA environment
+hassfest
+```
+
+### Testing Patterns
+**Must test these specific scenarios:**
+1. **Mode Routing**: Verify cool/dry/fan_only → AC, heat → FH, off → all off
+2. **Force Mode**: Test external modification detection and immediate correction
+3. **Preset Dynamics**: Verify preset list changes with HVAC mode
+4. **State Sync**: Test non-force mode allows reverse synchronization
+5. **Error Handling**: Test entity validation failures in config flow
+
+### Debugging Commands
+```bash
+# Monitor integration logs
 tail -f home-assistant.log | grep "room_hvac"
 
-# Check entity state in HA Developer Tools → States
-# Look for: climate.room_hvac_*
-
-# Debug attributes include:
-# - entry_id
-# - force_mode
-# - ac_entity_id
-# - fh_entity_id
-# - active_device (AC/FH/None)
+# Check entity state
+# Developer Tools → States → climate.room_hvac_*
 ```
 
-## Project-Specific Patterns
+## Critical Implementation Details
 
-### File Structure
+### Entity Validation Requirements
+**Config Flow Step 1** must validate:
+- Entities are different (`ac_entity_id != fh_entity_id`)
+- Both are climate domain entities
+- AC has `fan_modes` attribute and supports cool/dry/fan_only
+- FH supports `heat` mode and `target_temperature`
+- Entities are available (not `unknown`/`unavailable`)
+
+### State Change Detection
+**climate.py** uses sophisticated tracking:
+```python
+# Internal update detection
+_last_internal_update[entity_id] = current_time
+if current_time - last_update < 2.0:  # 2-second window
+    return  # Ignore our own updates
+
+# Force mode correction
+_correction_in_progress[entity_id] = True  # Prevent recursion
 ```
-room_hvac/
-├── __init__.py          # Entry/unload only (58 lines)
-├── climate.py           # Main logic - 345 lines
-├── config_flow.py       # 5-step wizard - 466 lines
-├── const.py             # All constants (35 lines)
-├── manifest.json        # Integration metadata
-├── strings.json         # i18n messages (Chinese)
-└── translations/
-    └── en.json          # English translations
-```
+
+### Preset Configuration Rules
+- **4 slots** per preset type (AC/FH) - configurable but fixed count
+- **AC presets**: Map name → fan_mode
+- **FH presets**: Map name → temperature (validated against entity min/max)
+- **Empty slots**: Automatically filtered in `_build_config_data()`
+- **Dynamic display**: `preset_modes` property returns different lists per HVAC mode
+
+### Force Mode Behavior
+- **Enabled**: External changes trigger immediate correction via service calls
+- **Correction**: Uses `blocking=True` service calls
+- **Failure**: Raises exception, no automatic降级
+- **Tracking**: Uses `_correction_in_progress` flags to prevent loops
+
+## Project-Specific Conventions
 
 ### Naming Conventions
-- Entity ID format: `climate.room_hvac_{entry_id}`
-- Unique ID format: `room_hvac_{entry_id}`
-- Config keys: `ac_entity_id`, `fh_entity_id`, `force_mode`, `ac_presets`, `fh_presets`
-- Preset slots: `slot_1`, `slot_2`, `slot_3`, `slot_4`
-- Preset naming: User-defined names, stored as keys in dict
+- **Classes**: `RoomHVACClimateEntity`, `RoomHVACConfigFlow`
+- **Methods**: `_private_method()` for internal logic
+- **Constants**: `DOMAIN`, `AC_HVAC_MODES`, `PRESET_SLOTS`
+- **Attributes**: `_attr_` prefix (HA convention)
+- **State tracking**: `_last_internal_update`, `_correction_in_progress`
 
-### Error Handling
-- All service calls use `blocking=True`
-- Errors are logged and re-raised
-- Validation happens in config flow, not at runtime
-- No silent failures - all errors logged with context
-- Temperature validation: Adjusts to min/max with warnings
+### Error Handling Strategy
+- **Config Flow**: Use specific error keys (`"ac_no_fan_modes"`, `"fh_no_heat_mode"`)
+- **Runtime**: Log errors with context, then re-raise
+- **Force Mode**: No降级, immediate failure on correction errors
+- **Logging**: INFO for operations, WARNING for inconsistencies, ERROR for failures
 
-### Logging Strategy
-- **INFO**: Mode switches, preset activations, successful operations, device routing
-- **WARNING**: Capability mismatches, range adjustments, missing attributes
-- **ERROR**: Service call failures, validation errors, entity not found
-- **DEBUG**: State updates, temperature values, device state changes
+### State Management
+- **Temperature Source**: Always from active device (AC or FH)
+- **Mode Switching**: Always turns off current device first
+- **Preset Application**: Changes parameters without changing HVAC mode
+- **No Memory**: Never auto-restore previous settings
 
-### Service Call Patterns
-```python
-await self.hass.services.async_call(
-    "climate",
-    "set_hvac_mode",
-    {"entity_id": entity_id, "hvac_mode": mode},
-    blocking=True,  # Always use blocking
-)
+## Key Files & Their Roles
+
+### `const.py` - The Source of Truth
+- Defines all supported HVAC modes
+- Maps modes to device types (AC vs FH)
+- Preset slot identifiers
+- Configuration key names
+
+### `climate.py` - The Brain
+- **State Listeners**: Tracks AC/FH changes via `async_track_state_change_event`
+- **Routing Logic**: `async_set_hvac_mode()` with device switching
+- **Force Mode**: `_enforce_force_mode_consistency()` + `_correct_inconsistency()`
+- **Preset Logic**: `async_set_preset_mode()` with dynamic mode mapping
+- **Properties**: `current_temperature`, `preset_modes`, `extra_state_attributes`
+
+### `config_flow.py` - The Gatekeeper
+- **5 Steps**: user → behavior → ac_presets → fh_presets → confirm
+- **Validation**: Entity existence, capabilities, ranges
+- **Preset Collection**: 4 slots with optional configuration
+- **Summary**: Builds human-readable confirmation page
+
+## Common Pitfalls to Avoid
+
+1. **Don't change preset slot count**: System expects exactly 4 slots per type
+2. **Don't implement auto-restore**: Specs explicitly forbid memory behavior
+3. **Don't allow device parallelism**: Always ensure single active device
+4. **Don't ignore force mode failures**: Must raise, not降级
+5. **Don't change mode mappings**: AC_HVAC_MODES and FH_HVAC_MODES are fixed
+
+## Integration-Specific Patterns
+
+### State Change Event Flow
+```
+1. External device change detected
+2. Check if internal update (2-second window)
+3. If force mode enabled:
+   - Compare expected vs actual state
+   - If mismatch: set correction flag → call service → reset flag
+4. If force mode disabled:
+   - Sync our state from device (reverse sync)
 ```
 
-## Extra State Attributes
-The integration provides these debug attributes:
-- `entry_id`: The config entry ID
-- `force_mode`: Boolean indicating force control mode
-- `ac_entity_id`: The AC entity ID
-- `fh_entity_id`: The FH entity ID
-- `active_device`: "AC", "FH", or None (current active device)
+### Configuration Data Structure
+```python
+{
+    "ac_entity_id": "climate.living_room_ac",
+    "fh_entity_id": "climate.floor_heating",
+    "force_mode": true,
+    "ac_presets": {
+        "Quiet": {"fan_mode": "low", "icon": "mdi:weather-night"},
+        "Turbo": {"fan_mode": "high", "icon": "mdi:weather-windy"}
+    },
+    "fh_presets": {
+        "Home": {"temperature": "21", "icon": "mdi:home"}
+    }
+}
+```
 
-## Integration with Home Assistant
-- Follows standard Home Assistant custom component patterns
-- Uses `climate` platform with `ClimateEntity` base class
-- Supports `TARGET_TEMPERATURE` and `PRESET_MODE` features
-- Temperature unit: Celsius (UnitOfTemperature.CELSIUS)
-- Target temperature step: 1.0
-- IoT Class: local_polling
-- Single instance allowed (enforced in config flow)
+### Entity Attributes (Debugging)
+```python
+{
+    "entry_id": "abc123",
+    "force_mode": true,
+    "ac_entity_id": "climate.living_room_ac",
+    "fh_entity_id": "climate.floor_heating",
+    "active_device": "AC",  # or "FH" or None
+    "ac_correcting": false,  # debugging flag
+    "fh_correcting": false,  # debugging flag
+    "listener_count": 2
+}
+```
 
-## Key Constraints
-- **Force mode**: Optional, blocks external changes (not fully implemented)
-- **Preset slots**: 4 max, empty ones hidden automatically
-- **State isolation**: No cross-device contamination
-- **Error handling**: All failures logged, no silent errors
-- **Mode routing**: Fixed mapping, no flexibility allowed
+## Testing Checklist
 
-## Documentation
-- `docs/FunctionalSpec.md` - Complete requirements (Chinese)
-- `docs/ConfigFlow.md` - Wizard logic (Chinese)
-- `docs/AgentTaskMileston.md` - Implementation milestones
-- `README.md` - Installation guide (English)
+Before making changes, verify these work:
+- [ ] Config flow accepts valid AC/FH entities
+- [ ] Config flow rejects invalid entities with clear errors
+- [ ] 5-step configuration completes successfully
+- [ ] Entity appears in HA UI after configuration
+- [ ] Mode routing works (all 5 modes)
+- [ ] Temperature control works in cool/dry/heat modes
+- [ ] Preset lists change dynamically with mode
+- [ ] Preset activation applies correct parameters
+- [ ] Force mode detects external changes
+- [ ] Force mode corrects inconsistencies
+- [ ] State listeners don't cause event loops
+- [ ] Error handling shows meaningful messages
 
-## Current Implementation Status
-- ✅ Core routing logic implemented
-- ✅ State synchronization working
-- ✅ Config flow with 5-step wizard
-- ✅ Preset system (AC + FH)
-- ✅ Preset activation implemented
-- ✅ Temperature range validation
-- ✅ Comprehensive error handling
-- ⚠️ Force mode (partially implemented - needs state listener for external changes)
+## Version Information
+- Current Version: 0.1.0
+- Minimum HA Version: 2024.1.0
+- Integration Type: local_polling
+- Config Flow: Yes (5 steps)
+- Platforms: climate only
 
-## Success Check
-All features implemented: routing ✅, presets ✅, validation ✅, state sync ✅, preset activation ✅, error handling ✅
+## Related Documentation
+- `docs/FunctionalSpec.md` - Complete functional requirements
+- `docs/ConfigFlow.md` - Configuration flow details
+- `docs/AgentTaskMileston.md` - Development milestones
+- `docs/SelfCheckReport.md` - Pre-release validation report
+- `README.md` - User-facing installation and usage guide
+
+## Critical Success Factors
+
+1. **Follow the Specs**: This implementation is complete and tested. Don't deviate from documented behavior.
+2. **Respect the Architecture**: The 5-file structure is intentional and complete.
+3. **Maintain State Consistency**: The event tracking and force mode logic are sophisticated - preserve them.
+4. **Keep Validation Strict**: Config flow validation prevents user errors - keep it comprehensive.
+5. **Log Verbosely**: The integration has excellent debug logging - maintain this standard.
+
+When working on this codebase, always reference the existing implementation patterns before making changes. The project follows Home Assistant best practices and has been thoroughly validated.
