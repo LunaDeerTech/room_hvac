@@ -139,9 +139,11 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._ac_presets = {}
             
             for slot in PRESET_SLOTS:
-                name = user_input.get(f"ac_{slot}_name")
-                icon = user_input.get(f"ac_{slot}_icon")
-                fan_speed = user_input.get(f"ac_{slot}_fan_speed")
+                # Extract data from section
+                section_data = user_input.get(f"ac_preset_{slot}", {})
+                name = section_data.get(f"ac_{slot}_name")
+                icon = section_data.get(f"ac_{slot}_icon")
+                fan_speed = section_data.get(f"ac_{slot}_fan_speed")
                 
                 # Only store if name and fan_speed are provided
                 if name and fan_speed:
@@ -177,9 +179,11 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._fh_presets = {}
             
             for slot in PRESET_SLOTS:
-                name = user_input.get(f"fh_{slot}_name")
-                icon = user_input.get(f"fh_{slot}_icon")
-                temperature = user_input.get(f"fh_{slot}_temp")
+                # Extract data from section
+                section_data = user_input.get(f"fh_preset_{slot}", {})
+                name = section_data.get(f"fh_{slot}_name")
+                icon = section_data.get(f"fh_{slot}_icon")
+                temperature = section_data.get(f"fh_{slot}_temp")
                 
                 # Only store if name and temperature are provided
                 if name and temperature:
@@ -318,64 +322,88 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     
     def _get_ac_presets_schema(self) -> vol.Schema:
         """Generate the AC preset configuration schema with 4 slots."""
+        from homeassistant.data_entry_flow import section
+        
         schema_dict = {}
         
         for slot in PRESET_SLOTS:
             default_name = AC_PRESET_DEFAULTS.get(slot, {}).get("name", "")
             default_icon = AC_PRESET_DEFAULTS.get(slot, {}).get("icon", "")
             
-            # Preset name (optional, but required if fan_speed is provided)
-            schema_dict[vol.Optional(f"ac_{slot}_name", default=default_name)] = str
+            # Create a section for each preset
+            preset_section = vol.Schema(
+                {
+                    # Preset name (optional, but required if fan_speed is provided)
+                    vol.Optional(f"ac_{slot}_name", default=default_name): str,
+                    
+                    # Preset icon (optional) - using HA native IconSelector
+                    vol.Optional(f"ac_{slot}_icon", default=default_icon): selector.IconSelector(),
+                    
+                    # Fan speed selector (optional, but required if name is provided)
+                    vol.Optional(f"ac_{slot}_fan_speed"): (
+                        selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=self._ac_fan_modes,
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        )
+                        if self._ac_fan_modes
+                        else str
+                    ),
+                }
+            )
             
-            # Preset icon (optional) - using HA native IconSelector
-            schema_dict[vol.Optional(f"ac_{slot}_icon", default=default_icon)] = selector.IconSelector()
-            
-            # Fan speed selector (optional, but required if name is provided)
-            # Use SelectSelector with available fan modes
-            if self._ac_fan_modes:
-                schema_dict[vol.Optional(f"ac_{slot}_fan_speed")] = selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=self._ac_fan_modes,
-                        mode=selector.SelectSelectorMode.DROPDOWN,
-                    )
-                )
-            else:
-                # Fallback to text input if no fan modes available
-                schema_dict[vol.Optional(f"ac_{slot}_fan_speed")] = str
+            # Wrap in section
+            schema_dict[vol.Optional(f"ac_preset_{slot}")] = section(
+                preset_section,
+                {"collapsed": False}
+            )
         
         return vol.Schema(schema_dict)
     
     def _get_fh_presets_schema(self) -> vol.Schema:
         """Generate the FH preset configuration schema with 4 slots."""
+        from homeassistant.data_entry_flow import section
+        
         schema_dict = {}
         
         for slot in PRESET_SLOTS:
             default_name = FH_PRESET_DEFAULTS.get(slot, {}).get("name", "")
             default_icon = FH_PRESET_DEFAULTS.get(slot, {}).get("icon", "")
             
-            # Preset name (optional, but required if temperature is provided)
-            schema_dict[vol.Optional(f"fh_{slot}_name", default=default_name)] = str
+            # Create a section for each preset
+            preset_section = vol.Schema(
+                {
+                    # Preset name (optional, but required if temperature is provided)
+                    vol.Optional(f"fh_{slot}_name", default=default_name): str,
+                    
+                    # Preset icon (optional) - using HA native IconSelector
+                    vol.Optional(f"fh_{slot}_icon", default=default_icon): selector.IconSelector(),
+                    
+                    # Temperature selector (optional, but required if name is provided)
+                    vol.Optional(f"fh_{slot}_temp"): (
+                        selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=self._fh_min_temp,
+                                max=self._fh_max_temp,
+                                step=0.5,
+                                mode=selector.NumberSelectorMode.SLIDER,
+                            )
+                        )
+                        if self._fh_min_temp is not None and self._fh_max_temp is not None
+                        else vol.All(
+                            vol.Coerce(float),
+                            vol.Range(min=5, max=35)  # Reasonable defaults
+                        )
+                    ),
+                }
+            )
             
-            # Preset icon (optional) - using HA native IconSelector
-            schema_dict[vol.Optional(f"fh_{slot}_icon", default=default_icon)] = selector.IconSelector()
-            
-            # Temperature selector (optional, but required if name is provided)
-            # Use NumberSelector with range validation if available
-            if self._fh_min_temp is not None and self._fh_max_temp is not None:
-                schema_dict[vol.Optional(f"fh_{slot}_temp")] = selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=self._fh_min_temp,
-                        max=self._fh_max_temp,
-                        step=0.5,
-                        mode=selector.NumberSelectorMode.SLIDER,
-                    )
-                )
-            else:
-                # Fallback to text input with basic validation
-                schema_dict[vol.Optional(f"fh_{slot}_temp")] = vol.All(
-                    vol.Coerce(float),
-                    vol.Range(min=5, max=35)  # Reasonable defaults
-                )
+            # Wrap in section
+            schema_dict[vol.Optional(f"fh_preset_{slot}")] = section(
+                preset_section,
+                {"collapsed": False}
+            )
         
         return vol.Schema(schema_dict)
     
