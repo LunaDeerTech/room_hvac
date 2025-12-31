@@ -39,18 +39,6 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._fh_presets: dict[str, dict[str, str]] = {}
         self._hass: HomeAssistant | None = None
     
-    @property
-    def hass(self) -> HomeAssistant:
-        """Get HomeAssistant instance."""
-        # ConfigFlow provides hass via the parent class
-        # noinspection PyTypeChecker
-        return super().hass  # type: ignore
-    
-    @hass.setter
-    def hass(self, value: HomeAssistant) -> None:
-        """Set HomeAssistant instance."""
-        # ConfigFlow handles hass via parent class
-        pass
     
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -68,53 +56,56 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors["ac_entity_id"] = "entity_required"
                 if not fh_entity_id:
                     errors["fh_entity_id"] = "entity_required"
-                
+
                 # If entities are provided, validate them
                 if ac_entity_id and fh_entity_id:
                     # Validate entities are different
                     if ac_entity_id == fh_entity_id:
                         errors["fh_entity_id"] = "entities_must_be_different"
-                    
+
                     # Validate entity domains
                     if not self._validate_entity_domains(ac_entity_id, fh_entity_id):
                         errors["general"] = "invalid_domain"
-                    
+
                     # If basic validation passed, check capabilities
                     if not errors:
-                        # Get entity states from Home Assistant
-                        ac_state = self.hass.states.get(ac_entity_id)
-                        fh_state = self.hass.states.get(fh_entity_id)
-                        
-                        # Check if entities exist and are available
-                        if ac_state is None:
-                            _LOGGER.error("AC entity '%s' not found in Home Assistant states.", ac_entity_id)
-                            errors["ac_entity_id"] = "entity_not_found"
-                        if fh_state is None:
-                            _LOGGER.error("FH entity '%s' not found in Home Assistant states.", fh_entity_id)
-                            errors["fh_entity_id"] = "entity_not_found"
+                        # 检查 self.hass 及 self.hass.states
+                        if self.hass is None or not hasattr(self.hass, "states") or self.hass.states is None:
+                            _LOGGER.error("[room_hvac] self.hass or self.hass.states is None during entity validation. self.hass type: %s", type(self.hass))
+                            errors["general"] = "hass_not_ready"
+                        else:
+                            # Get entity states from Home Assistant
+                            ac_state = self.hass.states.get(ac_entity_id)
+                            fh_state = self.hass.states.get(fh_entity_id)
 
-                        # Proceed only if both states are valid
-                        if ac_state and fh_state:
-                            # Validate AC capabilities
-                            ac_capability_errors = self._validate_ac_capabilities(ac_state)
-                            if ac_capability_errors:
-                                errors.update(ac_capability_errors)
+                            # Check if entities exist and are available
+                            if ac_state is None:
+                                _LOGGER.error("AC entity '%s' not found in Home Assistant states.", ac_entity_id)
+                                errors["ac_entity_id"] = "entity_not_found"
+                            if fh_state is None:
+                                _LOGGER.error("FH entity '%s' not found in Home Assistant states.", fh_entity_id)
+                                errors["fh_entity_id"] = "entity_not_found"
+                            # Proceed only if both states are valid
+                            if ac_state and fh_state:
+                                # Validate AC capabilities
+                                ac_capability_errors = self._validate_ac_capabilities(ac_state)
+                                if ac_capability_errors:
+                                    errors.update(ac_capability_errors)
 
-                            # Validate FH capabilities
-                            fh_capability_errors = self._validate_fh_capabilities(fh_state)
-                            if fh_capability_errors:
-                                errors.update(fh_capability_errors)
-                    
+                                # Validate FH capabilities
+                                fh_capability_errors = self._validate_fh_capabilities(fh_state)
+                                if fh_capability_errors:
+                                    errors.update(fh_capability_errors)
+
                     # If all validations passed, store and proceed to next step
                     if not errors:
                         self._ac_entity_id = ac_entity_id
                         self._fh_entity_id = fh_entity_id
                         return await self.async_step_behavior()
-            
+
             except Exception as ex:
-                _LOGGER.error("Unexpected error during entity validation: %s", ex)
+                _LOGGER.error("Unexpected error during entity validation: %s (hass type: %s)", ex, type(self.hass))
                 errors["general"] = "validation_error"
-        
         # Show the form with any errors
         return self.async_show_form(
             step_id="user",
@@ -286,7 +277,7 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         
         # Check if entity supports target temperature
         # This is critical for floor heating control
-        if "target_temperature" not in fh_state.attributes:
+        if "target_temperature" not in fh_state.attributes and 'temperature' not in fh_state.attributes:
             errors["fh_entity_id"] = "fh_no_target_temp"
             return errors
         
