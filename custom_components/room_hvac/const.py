@@ -36,3 +36,19 @@ CONF_FH_ENTITY_ID = "fh_entity_id"
 CONF_FORCE_MODE = "force_mode"
 CONF_AC_PRESETS = "ac_presets"
 CONF_FH_PRESETS = "fh_presets"
+
+# AC preset default values
+AC_PRESET_DEFAULTS = {
+    PRESET_SLOT_1: {"name": "自动", "icon": "mdi:fan-auto"},
+    PRESET_SLOT_2: {"name": "静音", "icon": "mdi:weather-night"},
+    PRESET_SLOT_3: {"name": "中速", "icon": "mdi:speedometer-medium"},
+    PRESET_SLOT_4: {"name": "全速", "icon": "mdi:speedometer"},
+}
+
+# FH preset default values
+FH_PRESET_DEFAULTS = {
+    PRESET_SLOT_1: {"name": "外出", "icon": "mdi:account-arrow-left-outline"},
+    PRESET_SLOT_2: {"name": "在家", "icon": "mdi:home"},
+    PRESET_SLOT_3: {"name": "活动", "icon": "mdi:dumbbell"},
+    PRESET_SLOT_4: {"name": "睡眠", "icon": "mdi:bed"},
+}

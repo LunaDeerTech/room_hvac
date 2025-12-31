@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import selector
 
-from .const import DOMAIN, AC_HVAC_MODES, FH_HVAC_MODES, PRESET_SLOTS
+from .const import DOMAIN, AC_HVAC_MODES, FH_HVAC_MODES, PRESET_SLOTS, AC_PRESET_DEFAULTS, FH_PRESET_DEFAULTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -161,10 +161,11 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             # Fallback - should not happen due to previous validation
             self._ac_fan_modes = []
         
-        # Show the AC preset configuration form
+        # Show the AC preset configuration form with default values
         return self.async_show_form(
             step_id="ac_presets",
             data_schema=self._get_ac_presets_schema(),
+            description_placeholders=AC_PRESET_DEFAULTS,
         )
     
     async def async_step_fh_presets(
@@ -225,10 +226,11 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._fh_min_temp = None
             self._fh_max_temp = None
         
-        # Show the FH preset configuration form
+        # Show the FH preset configuration form with default values
         return self.async_show_form(
             step_id="fh_presets",
             data_schema=self._get_fh_presets_schema(),
+            description_placeholders=FH_PRESET_DEFAULTS,
         )
     
     def _validate_entity_domains(self, ac_entity_id: str, fh_entity_id: str) -> bool:
@@ -319,11 +321,14 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema_dict = {}
         
         for slot in PRESET_SLOTS:
-            # Preset name (optional, but required if fan_speed is provided)
-            schema_dict[vol.Optional(f"ac_{slot}_name")] = str
+            default_name = AC_PRESET_DEFAULTS.get(slot, {}).get("name", "")
+            default_icon = AC_PRESET_DEFAULTS.get(slot, {}).get("icon", "")
             
-            # Preset icon (optional)
-            schema_dict[vol.Optional(f"ac_{slot}_icon")] = str
+            # Preset name (optional, but required if fan_speed is provided)
+            schema_dict[vol.Optional(f"ac_{slot}_name", default=default_name)] = str
+            
+            # Preset icon (optional) - using HA native IconSelector
+            schema_dict[vol.Optional(f"ac_{slot}_icon", default=default_icon)] = selector.IconSelector()
             
             # Fan speed selector (optional, but required if name is provided)
             # Use SelectSelector with available fan modes
@@ -345,11 +350,14 @@ class RoomHVACConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema_dict = {}
         
         for slot in PRESET_SLOTS:
-            # Preset name (optional, but required if temperature is provided)
-            schema_dict[vol.Optional(f"fh_{slot}_name")] = str
+            default_name = FH_PRESET_DEFAULTS.get(slot, {}).get("name", "")
+            default_icon = FH_PRESET_DEFAULTS.get(slot, {}).get("icon", "")
             
-            # Preset icon (optional)
-            schema_dict[vol.Optional(f"fh_{slot}_icon")] = str
+            # Preset name (optional, but required if temperature is provided)
+            schema_dict[vol.Optional(f"fh_{slot}_name", default=default_name)] = str
+            
+            # Preset icon (optional) - using HA native IconSelector
+            schema_dict[vol.Optional(f"fh_{slot}_icon", default=default_icon)] = selector.IconSelector()
             
             # Temperature selector (optional, but required if name is provided)
             # Use NumberSelector with range validation if available
