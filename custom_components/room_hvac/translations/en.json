@@ -21,32 +21,37 @@
         "description": "Configure up to 4 presets for air conditioning modes. Each preset requires a name and fan speed. Unconfigured slots will be ignored.\n\n**Note:** Each preset maps a name to a specific fan speed. Only configured presets will be available.",
         "sections": {
           "ac_preset_slot_1": {
-            "name": "Preset 1"
+            "name": "Preset 1",
+            "data": {
+              "ac_slot_1_name": "Name",
+              "ac_slot_1_icon": "Icon",
+              "ac_slot_1_fan_speed": "Fan Speed"
+            }
           },
           "ac_preset_slot_2": {
-            "name": "Preset 2"
+            "name": "Preset 2",
+            "data": {
+              "ac_slot_2_name": "Name",
+              "ac_slot_2_icon": "Icon",
+              "ac_slot_2_fan_speed": "Fan Speed"
+            }
           },
           "ac_preset_slot_3": {
             "name": "Preset 3",
-            "description": "Configure the third AC preset"
+            "data": {
+              "ac_slot_3_name": "Name",
+              "ac_slot_3_icon": "Icon",
+              "ac_slot_3_fan_speed": "Fan Speed"
+            }
           },
           "ac_preset_slot_4": {
-            "name": "Preset 4"
+            "name": "Preset 4",
+            "data": {
+              "ac_slot_4_name": "Name",
+              "ac_slot_4_icon": "Icon",
+              "ac_slot_4_fan_speed": "Fan Speed"
+            }
           }
-        },
-        "data": {
-          "ac_slot_1_name": "Preset 1 Name",
-          "ac_slot_1_icon": "Preset 1 Icon",
-          "ac_slot_1_fan_speed": "Preset 1 Fan Speed",
-          "ac_slot_2_name": "Preset 2 Name",
-          "ac_slot_2_icon": "Preset 2 Icon",
-          "ac_slot_2_fan_speed": "Preset 2 Fan Speed",
-          "ac_slot_3_name": "Preset 3 Name",
-          "ac_slot_3_icon": "Preset 3 Icon",
-          "ac_slot_3_fan_speed": "Preset 3 Fan Speed",
-          "ac_slot_4_name": "Preset 4 Name",
-          "ac_slot_4_icon": "Preset 4 Icon",
-          "ac_slot_4_fan_speed": "Preset 4 Fan Speed"
         }
       },
       "fh_presets": {
@@ -54,31 +59,37 @@
         "description": "Configure up to 4 presets for heating mode. Each preset requires a name and target temperature. Temperatures will be validated against your floor heating's min/max range. Unconfigured slots will be ignored.\n\n**Note:** Each preset maps a name to a target temperature.",
         "sections": {
           "fh_preset_slot_1": {
-            "name": "Preset 1"
+            "name": "Preset 1",
+            "data": {
+              "fh_slot_1_name": "Name",
+              "fh_slot_1_icon": "Icon",
+              "fh_slot_1_temp": "Target Temperature"
+            }
           },
           "fh_preset_slot_2": {
-            "name": "Preset 2"
+            "name": "Preset 2",
+            "data": {
+              "fh_slot_2_name": "Name",
+              "fh_slot_2_icon": "Icon",
+              "fh_slot_2_temp": "Target Temperature"
+            }
           },
           "fh_preset_slot_3": {
-            "name": "Preset 3"
+            "name": "Preset 3",
+            "data": {
+              "fh_slot_3_name": "Name",
+              "fh_slot_3_icon": "Icon",
+              "fh_slot_3_temp": "Target Temperature"
+            }
           },
           "fh_preset_slot_4": {
-            "name": "Preset 4"
+            "name": "Preset 4",
+            "data": {
+              "fh_slot_4_name": "Name",
+              "fh_slot_4_icon": "Icon",
+              "fh_slot_4_temp": "Target Temperature"
+            }
           }
-        },
-        "data": {
-          "fh_slot_1_name": "Preset 1 Name",
-          "fh_slot_1_icon": "Preset 1 Icon",
-          "fh_slot_1_temp": "Preset 1 Temperature",
-          "fh_slot_2_name": "Preset 2 Name",
-          "fh_slot_2_icon": "Preset 2 Icon",
-          "fh_slot_2_temp": "Preset 2 Temperature",
-          "fh_slot_3_name": "Preset 3 Name",
-          "fh_slot_3_icon": "Preset 3 Icon",
-          "fh_slot_3_temp": "Preset 3 Temperature",
-          "fh_slot_4_name": "Preset 4 Name",
-          "fh_slot_4_icon": "Preset 4 Icon",
-          "fh_slot_4_temp": "Preset 4 Temperature"
         }
       },
       "confirm": {
