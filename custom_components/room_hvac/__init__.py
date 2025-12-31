@@ -22,7 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = entry.data
     
     # Forward setup to climate platform
-    await hass.config_entries.async_forward_entry_setup(entry, PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
     _LOGGER.info("Room HVAC integration setup complete for entry: %s", entry.entry_id)
     return True
